@@ -190,3 +190,15 @@ func helpPrefs() {
 		`pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."`,
 	)
 }
+
+func helpDeleteIdea() {
+	printHelp("delete-idea",
+		"Delete an idea by ID (from a contact or from general ideas)",
+		" --idea <id> [--for <name>] [flags]",
+		`  --idea <id>              Idea ID to delete (required). Find IDs with: pressie ideas
+  --for <name>             Contact name. Omit or use "anyone" to delete a general idea.
+  --private                Look in private directory (default)
+  --shared                 Look in shared directory`,
+		`pressie delete-idea --idea abc-123 --for "Kris"`,
+	)
+}

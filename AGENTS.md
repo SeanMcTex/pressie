@@ -76,6 +76,26 @@ pressie list --for "Kris" --direction given --year 2025
 Required: `--for`.
 Optional: `--direction` (given/received/both, default: both), `--year`, `--private`/`--shared`.
 
+### delete-idea
+```bash
+pressie delete-idea --idea <id> --for "Kris"   # delete from a contact
+pressie delete-idea --idea <id>                 # delete from general ideas
+```
+Required: `--idea <id>` (find IDs with `pressie ideas`).
+Optional: `--for <name>` (omit or use "anyone" to delete a general idea), `--private`/`--shared`.
+
+After deleting a per-contact idea, the contact's tags are recomputed from remaining ideas. This prevents stale tags from accumulating.
+
+### prefs
+```bash
+pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."
+pressie prefs --for "Kris"
+```
+Required: `--for <name>`.
+Optional: `--set <text>` (replaces existing preferences). Without `--set`, reads current preferences.
+
+Preferences are freeform text shown as context in `ideas` and `list` output — useful for storing things like favorite colors, sizes, or dietary restrictions that aren't gift ideas but inform gift selection.
+
 ## Commands (not yet implemented)
 
 `assign`, `search`, `resolve`, `stats`, `sync`, `plugins` — run `pressie <command> -h` for planned flags.

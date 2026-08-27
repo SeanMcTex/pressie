@@ -353,3 +353,72 @@ func TestRetireIdeaByID_SkipsNonOpen(t *testing.T) {
 		t.Fatalf("retired = %d, want 0 (already purchased)", retired)
 	}
 }
+
+func TestRecomputeTags_Union(t *testing.T) {
+	ideas := []store.Idea{
+		{ID: "1", Tags: []string{"art", "irish"}},
+		{ID: "2", Tags: []string{"irish", "warm"}},
+		{ID: "3", Tags: []string{"kitchen"}},
+	}
+	tags := recomputeTags(ideas)
+	want := []string{"art", "irish", "warm", "kitchen"}
+	if len(tags) != len(want) {
+		t.Fatalf("len = %d, want %d", len(tags), len(want))
+	}
+	for i, w := range want {
+		if tags[i] != w {
+			t.Errorf("tags[%d] = %q, want %q", i, tags[i], w)
+		}
+	}
+}
+
+func TestRecomputeTags_CaseInsensitiveDedup(t *testing.T) {
+	ideas := []store.Idea{
+		{ID: "1", Tags: []string{"Art"}},
+		{ID: "2", Tags: []string{"art", "music"}},
+	}
+	tags := recomputeTags(ideas)
+	if len(tags) != 2 {
+		t.Fatalf("len = %d, want 2 (case-insensitive dedup)", len(tags))
+	}
+	if tags[0] != "Art" {
+		t.Errorf("tags[0] = %q, want %q (first-seen preserved)", tags[0], "Art")
+	}
+}
+
+func TestRecomputeTags_EmptyIdeas(t *testing.T) {
+	tags := recomputeTags(nil)
+	if len(tags) != 0 {
+		t.Fatalf("len = %d, want 0", len(tags))
+	}
+}
+
+func TestRecomputeTags_IdeasWithNoTags(t *testing.T) {
+	ideas := []store.Idea{
+		{ID: "1", Tags: nil},
+		{ID: "2", Tags: []string{}},
+		{ID: "3", Tags: []string{"art"}},
+	}
+	tags := recomputeTags(ideas)
+	if len(tags) != 1 || tags[0] != "art" {
+		t.Errorf("tags = %v, want [art]", tags)
+	}
+}
+
+func TestRecomputeTags_AfterDeletion(t *testing.T) {
+	// Simulate: had 3 ideas, deleted idea 2 (which had "music" tag).
+	// Tags from remaining ideas should not include "music".
+	remaining := []store.Idea{
+		{ID: "1", Tags: []string{"art", "irish"}},
+		{ID: "3", Tags: []string{"kitchen"}},
+	}
+	tags := recomputeTags(remaining)
+	for _, tag := range tags {
+		if tag == "music" {
+			t.Error("tag 'music' should have been pruned after deletion")
+		}
+	}
+	if len(tags) != 3 {
+		t.Errorf("len = %d, want 3 (art, irish, kitchen)", len(tags))
+	}
+}

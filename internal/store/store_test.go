@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -237,5 +238,42 @@ func TestSaveLoadContactFile_Preferences(t *testing.T) {
 	}
 	if loaded2.Preferences != "" {
 		t.Errorf("Preferences = %q, want empty", loaded2.Preferences)
+	}
+}
+
+func TestSaveContactFile_AtomicWrite(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "kris.json")
+
+	cf := &ContactFile{
+		ContactKey:    "manual:kris",
+		Name:          "Kris",
+		GiftsGiven:    []Gift{},
+		GiftsReceived: []Gift{},
+		Ideas:         []Idea{},
+	}
+
+	if err := SaveContactFile(path, cf); err != nil {
+		t.Fatalf("SaveContactFile: %v", err)
+	}
+
+	// Verify the file exists and is readable.
+	loaded, err := LoadContactFile(path)
+	if err != nil {
+		t.Fatalf("LoadContactFile: %v", err)
+	}
+	if loaded.Name != "Kris" {
+		t.Errorf("Name = %q", loaded.Name)
+	}
+
+	// Verify no temp files left behind.
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("ReadDir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".pressie-tmp-") {
+			t.Errorf("temp file left behind: %s", e.Name())
+		}
 	}
 }

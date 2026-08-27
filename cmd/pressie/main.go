@@ -25,6 +25,8 @@ func main() {
 		cmdAddReceived(args)
 	case "add-idea":
 		cmdAddIdea(args)
+	case "delete-idea":
+		cmdDeleteIdea(args)
 	case "list":
 		cmdList(args)
 	case "ideas":
@@ -64,6 +66,7 @@ Usage:
 Commands (implemented):
   init [path]              Initialize a gifts directory
   add-idea                 Add a gift idea (for a person or "anyone")
+  delete-idea              Delete an idea by ID
   add-given                Log a gift you gave (retires matching ideas)
   add-received             Log a gift you received
   ideas                    Show ideas for a contact (filters past gifts)
@@ -88,6 +91,7 @@ Quick start:
 Required flags by command:
   init                    [path]
   add-idea                --for <name> --item <text>
+  delete-idea             --idea <id>  (add --for <name> for per-contact)
   add-given               --to <name> --item <text>
   add-received            --from <name> --item <text>
   ideas                   --for <name>  (or "anyone" for general ideas)

@@ -96,7 +96,7 @@ func SaveIndex(giftsDir string, idx *IndexFile) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return writeAtomic(path, data)
 }
 
 // LoadContactFile reads a per-contact JSON file.
@@ -118,7 +118,7 @@ func SaveContactFile(path string, cf *ContactFile) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return writeAtomic(path, data)
 }
 
 // LoadGeneralIdeas reads the general ideas file.
@@ -145,5 +145,32 @@ func SaveGeneralIdeas(giftsDir string, ideas []Idea) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return writeAtomic(path, data)
+}
+
+// writeAtomic writes data to path atomically by first writing to a temp
+// file in the same directory, then renaming. This prevents partial writes
+// from crashes, interrupted processes, or concurrent access.
+func writeAtomic(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".pressie-tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	// Clean up temp file on any error path.
+	defer func() {
+		tmp.Close()
+		os.Remove(tmpName)
+	}()
+	if _, err := tmp.Write(data); err != nil {
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, path)
 }
