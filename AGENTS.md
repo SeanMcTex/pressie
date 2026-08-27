@@ -94,7 +94,7 @@ pressie prefs --for "Kris"
 Required: `--for <name>`.
 Optional: `--set <text>` (replaces existing preferences). Without `--set`, reads current preferences.
 
-Preferences are freeform text shown as context in `ideas` and `list` output — useful for storing things like favorite colors, sizes, or dietary restrictions that aren't gift ideas but inform gift selection.
+Preferences are freeform text shown as context in `ideas` and `list` output — useful for storing things like favorite colors, sizes, or dietary restrictions that aren't gift ideas but inform gift selection. Note: the JSON field is `"preferences"` (not `"prefs"`) — the command name is abbreviated but the data field uses the full word.
 
 ## Commands (not yet implemented)
 

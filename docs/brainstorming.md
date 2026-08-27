@@ -227,9 +227,19 @@ Irish/British slang for "present" — fits the vibe.
 ## Post-v1
 
 - v1.2: Web UI + API server
-- v1.3: Image support, iOS Shortcuts
+- v1.3: Image support, iOS Shortcuts, thank-you tracking for received gifts
 - v1.5: `stats`, `suggest` (agent-bait command)
-- v2: Tauri app? Plugin marketplace?
+- v2: Plugin marketplace?
+
+### Thank-You Tracking
+
+Received gifts need a thank-you status so you don't forget to send a card or message. The `Gift` struct gains a `thanked` field: `"pending"` (default when a gift is received via `add-received`), `"sent"` (marked after you've thanked them), or omitted/empty for gifts given (not applicable).
+
+Planned CLI surface:
+- `add-received` sets `thanked: "pending"` automatically
+- `pressie thanks --for "Sam" --item <id>` or `pressie thanks --gift <gift-id>` marks a received gift as thanked
+- `pressie list --for "Sam" --direction received --thanked pending` shows unthanked gifts
+- The `list` command output shows thank-you status for received gifts
 
 ## Repo Structure
 

@@ -140,6 +140,7 @@ gifts/
 | `images`   | array  | no       | Array of relative paths to image files. Empty array if none. |
 | `source`   | string | no       | How this entry was added: "manual", "agent", "import". Default: "manual". |
 | `added`    | string | no       | ISO timestamp when the record was created. |
+| `thanked`  | string | no       | Thank-you status for received gifts: "pending" (default for received), "sent", or omitted. null/omitted for gifts given (not applicable). |
 
 ### Idea
 
