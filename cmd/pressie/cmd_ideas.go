@@ -64,11 +64,7 @@ func listGeneralIdeas(cfg *config.Config) {
 // listContactIdeas loads a contact's direct ideas, merges tag-matched general
 // ideas, filters out duplicates from gifts_given, and prints the combined list.
 func listContactIdeas(cfg *config.Config) {
-	idx, err := store.LoadIndex(cfg.GiftsDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
-		os.Exit(1)
-	}
+	idx := requireIndex(cfg.GiftsDir)
 
 	_, name, relPath, err := gifts.ResolveContact(context.Background(), cfg.GiftsDir, idx, cfg.For, cfg.Visibility)
 	if err != nil {

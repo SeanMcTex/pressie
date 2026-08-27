@@ -80,11 +80,7 @@ func addGeneralIdea(cfg *config.Config, idea *store.Idea) {
 // addContactIdea resolves the contact, ensures their file exists, appends
 // the idea, and saves. Also registers the contact in _index.json if new.
 func addContactIdea(cfg *config.Config, idea *store.Idea) {
-	idx, err := store.LoadIndex(cfg.GiftsDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
-		os.Exit(1)
-	}
+	idx := requireIndex(cfg.GiftsDir)
 
 	key, name, relPath, err := gifts.ResolveContact(context.Background(), cfg.GiftsDir, idx, cfg.For, cfg.Visibility)
 	if err != nil {
