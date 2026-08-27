@@ -1,0 +1,47 @@
+{
+  "contact_key": "manual:blair-raker",
+  "name": "Blair Raker",
+  "tags": ["music", "irish", "teaching"],
+  "gifts_given": [
+    {
+      "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+      "date": "2025-12-25",
+      "occasion": "christmas",
+      "item": "Bodhrán tuner",
+      "price": 30,
+      "currency": "USD",
+      "notes": "",
+      "images": [],
+      "source": "manual",
+      "added": "2025-12-20T14:00:00Z"
+    }
+  ],
+  "gifts_received": [
+    {
+      "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+      "date": "2025-12-25",
+      "occasion": "christmas",
+      "item": "Homemade shortbread tin",
+      "price": null,
+      "currency": null,
+      "notes": "Best shortbread ever",
+      "images": [],
+      "source": "manual",
+      "added": "2025-12-25T18:00:00Z"
+    }
+  ],
+  "ideas": [
+    {
+      "id": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+      "item": "Custom guitar strap with Celtic knotwork",
+      "url": "https://example.com/strap",
+      "price_estimate": 55,
+      "currency": "USD",
+      "tags": ["music", "irish"],
+      "status": "open",
+      "added": "2026-08-10",
+      "notes": "Leatherworker on Etsy does beautiful work",
+      "images": []
+    }
+  ]
+}

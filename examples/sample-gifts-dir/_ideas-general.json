@@ -1,0 +1,28 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "item": "Handmade ceramic pour-over coffee set",
+    "url": "https://example.com/ceramic",
+    "price_estimate": 60,
+    "currency": "USD",
+    "tags": ["kitchen", "handmade"],
+    "status": "open",
+    "added": "2026-08-27",
+    "notes": "Saw at the market, universally appealing",
+    "assigned_to": null,
+    "images": []
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "item": "Custom house portrait watercolor",
+    "url": "",
+    "price_estimate": 120,
+    "currency": "USD",
+    "tags": ["art", "house", "personal"],
+    "status": "open",
+    "added": "2026-08-15",
+    "notes": "Etsy artist who does house portraits",
+    "assigned_to": null,
+    "images": []
+  }
+]

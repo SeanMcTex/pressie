@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "plugins": [
+    {
+      "name": "google-contacts",
+      "command": "plugins/google-contacts.sh",
+      "timeout_ms": 5000
+    },
+    {
+      "name": "manual",
+      "command": "plugins/manual.sh",
+      "timeout_ms": 1000
+    }
+  ],
+  "sync": {
+    "type": "git",
+    "remote": "",
+    "branch": "main"
+  },
+  "contacts": {
+    "manual:kris-mcmains": {
+      "file": "_private/kris-mcmains.json",
+      "visibility": "private",
+      "tags": ["art", "irish", "kitchen", "garden"]
+    },
+    "manual:blair-raker": {
+      "file": "_shared/blair-raker.json",
+      "visibility": "shared",
+      "tags": ["music", "irish", "teaching"]
+    }
+  }
+}

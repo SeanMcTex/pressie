@@ -1,0 +1,16 @@
+# Binaries
+/bin/
+/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test artifacts
+*.test
+*.out
+coverage.html
