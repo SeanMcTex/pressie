@@ -30,6 +30,8 @@ type Config struct {
 	Direction   string
 	Year        string
 	Idea        string // idea ID for precise retirement in add-given
+	Prefs       string // freeform preferences text for a contact
+	HasPrefs    bool   // true if --set was passed
 }
 
 // DefaultGiftsDir returns the default gifts directory path.
@@ -129,10 +131,13 @@ func ParseArgs(args []string) (*Config, error) {
 			cfg.Status = value
 		case "--direction":
 			cfg.Direction = value
-	case "--year":
-		cfg.Year = value
-	case "--idea":
-		cfg.Idea = value
+		case "--year":
+			cfg.Year = value
+		case "--idea":
+			cfg.Idea = value
+		case "--set":
+			cfg.Prefs = value
+			cfg.HasPrefs = true
 		default:
 			return nil, fmt.Errorf("unknown flag: %s", name)
 		}

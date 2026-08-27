@@ -178,3 +178,15 @@ func helpPlugins() {
 		`  (no flags)`,
 	)
 }
+
+func helpPrefs() {
+	printHelp("prefs",
+		"Read or set freeform preferences for a contact",
+		" --for <name> [--set <text>] [flags]",
+		`  --for <name>             Contact name or key (required)
+  --set <text>             Set preferences (replaces existing). Without this, reads current preferences.
+  --private                Look in private directory (default)
+  --shared                 Look in shared directory`,
+		`pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."`,
+	)
+}

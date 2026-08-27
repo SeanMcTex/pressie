@@ -126,6 +126,9 @@ func listContactIdeas(cfg *config.Config) {
 	})
 
 	fmt.Printf("Ideas for %s (%d):\n\n", name, len(combined))
+	if cf.Preferences != "" {
+		fmt.Printf("Preferences: %s\n\n", cf.Preferences)
+	}
 	for _, idea := range combined {
 		printIdea(idea)
 	}

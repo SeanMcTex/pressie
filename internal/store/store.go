@@ -46,6 +46,7 @@ type ContactFile struct {
 	GiftsGiven    []Gift `json:"gifts_given"`
 	GiftsReceived []Gift `json:"gifts_received"`
 	Ideas         []Idea `json:"ideas"`
+	Preferences   string `json:"preferences,omitempty"`
 }
 
 // IndexFile is the _index.json structure.

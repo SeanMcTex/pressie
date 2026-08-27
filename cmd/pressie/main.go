@@ -29,6 +29,8 @@ func main() {
 		cmdList(args)
 	case "ideas":
 		cmdIdeas(args)
+	case "prefs":
+		cmdPrefs(args)
 	case "assign":
 		cmdAssign(args)
 	case "search":
@@ -66,6 +68,7 @@ Commands (implemented):
   add-received             Log a gift you received
   ideas                    Show ideas for a contact (filters past gifts)
   list                     List gifts given/received for a contact
+  prefs                    Read or set freeform preferences for a contact
 
 Commands (not yet implemented):
   assign <idea-id>         Assign a general idea to a specific person
@@ -89,6 +92,7 @@ Required flags by command:
   add-received            --from <name> --item <text>
   ideas                   --for <name>  (or "anyone" for general ideas)
   list                    --for <name>
+  prefs                   --for <name>  (add --set <text> to write)
 
 Common flags:
   --for <name>             Target contact (by name or key)

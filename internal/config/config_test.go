@@ -198,3 +198,16 @@ func TestParseArgs_IdeaFlag(t *testing.T) {
 		t.Errorf("Idea = %q, want %q", cfg.Idea, "abc-123-def")
 	}
 }
+
+func TestParseArgs_SetFlag(t *testing.T) {
+	cfg, err := ParseArgs([]string{"--set", "Favorite colors: blue, green"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Prefs != "Favorite colors: blue, green" {
+		t.Errorf("Prefs = %q, want %q", cfg.Prefs, "Favorite colors: blue, green")
+	}
+	if !cfg.HasPrefs {
+		t.Error("HasPrefs = false, want true")
+	}
+}

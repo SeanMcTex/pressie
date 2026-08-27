@@ -62,6 +62,11 @@ func cmdList(args []string) {
 	}
 
 	total := len(given) + len(received)
+
+	if cf.Preferences != "" {
+		fmt.Printf("Preferences for %s:\n%s\n\n", name, cf.Preferences)
+	}
+
 	if total == 0 {
 		fmt.Printf("No gifts found for %s", name)
 		if year != "" {

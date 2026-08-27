@@ -193,3 +193,49 @@ func TestSaveIndex_CreatesFile(t *testing.T) {
 		t.Fatalf("_index.json not created: %v", err)
 	}
 }
+
+func TestSaveLoadContactFile_Preferences(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "kris.json")
+
+	cf := &ContactFile{
+		ContactKey:    "manual:kris",
+		Name:          "Kris",
+		GiftsGiven:    []Gift{},
+		GiftsReceived: []Gift{},
+		Ideas:         []Idea{},
+		Preferences:   "Favorite colors: blue, green. Shoe size: 11.",
+	}
+
+	if err := SaveContactFile(path, cf); err != nil {
+		t.Fatalf("SaveContactFile: %v", err)
+	}
+
+	loaded, err := LoadContactFile(path)
+	if err != nil {
+		t.Fatalf("LoadContactFile: %v", err)
+	}
+	if loaded.Preferences != "Favorite colors: blue, green. Shoe size: 11." {
+		t.Errorf("Preferences = %q", loaded.Preferences)
+	}
+
+	// Test empty preferences (omitempty should omit the field).
+	cf2 := &ContactFile{
+		ContactKey:    "manual:blair",
+		Name:          "Blair",
+		GiftsGiven:    []Gift{},
+		GiftsReceived: []Gift{},
+		Ideas:         []Idea{},
+	}
+	path2 := filepath.Join(dir, "blair.json")
+	if err := SaveContactFile(path2, cf2); err != nil {
+		t.Fatalf("SaveContactFile: %v", err)
+	}
+	loaded2, err := LoadContactFile(path2)
+	if err != nil {
+		t.Fatalf("LoadContactFile: %v", err)
+	}
+	if loaded2.Preferences != "" {
+		t.Errorf("Preferences = %q, want empty", loaded2.Preferences)
+	}
+}
