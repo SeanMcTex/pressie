@@ -214,15 +214,23 @@ Irish/British slang for "present" — fits the vibe.
 - Plugin spec properly documented
 - Community contributions welcome but not required for v1
 
-## v1 Scope
+## v0.1.0 Scope (shipped)
 
-1. Core data model with private/shared partition
-2. `add-given`, `add-received`, `add-idea`, `list`, `ideas`, `assign`
-3. Google Contacts plugin + manual plugin
-4. General ideas list with tag-based matching + duplicate avoidance (filter past gifts given)
-5. `sync` via git
-6. `_index.json` config
-7. `init` command
+1. Core data model with private/shared partition ✅
+2. `add-given`, `add-received`, `add-idea`, `list`, `ideas`, `delete-idea`, `prefs` ✅
+3. Google Contacts plugin + manual plugin ✅ (manual tested, google-contacts untested)
+4. General ideas list with tag-based matching + duplicate avoidance ✅
+5. `_index.json` config ✅
+6. `init` command ✅
+7. Web UI + JSON API (`serve`) ✅
+8. Agent discovery (`AGENTS.md`, per-command `-h`) ✅
+
+## Deferred
+
+- `assign`: general ideas are broadly applicable by tag, not "ideas in search of a home." May not be needed.
+- `sync`: git sync method under reconsideration. May use a different mechanism.
+- Thank-you tracking: specced for v0.2 (see below)
+- `stats`, `suggest`: deferred to v0.5+
 
 ## Post-v1
 
