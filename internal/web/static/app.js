@@ -4,6 +4,7 @@
 
 const API = '';
 let currentRoute = '';
+let currentContactName = '';
 
 // --- Router ---
 function router() {
@@ -43,6 +44,7 @@ function el(tag, props = {}, ...children) {
   for (const [k, v] of Object.entries(props)) {
     if (k === 'class') e.className = v;
     else if (k === 'onclick') e.onclick = v;
+    else if (k === 'onkeyup') e.onkeyup = v;
     else if (k === 'href') e.setAttribute('href', v);
     else if (k === 'type') e.type = v;
     else if (k === 'placeholder') e.placeholder = v;
@@ -88,11 +90,13 @@ function header(title) {
 
 // --- Contacts page (home) ---
 
+let allContacts = [];
+
 async function renderContactsPage() {
   const app = document.getElementById('app');
   app.innerHTML = '';
 
-  // Header with "quick add" button
+  // Header
   const h = el('div', { class: 'header' },
     el('h1', {}, 'Contacts'),
     el('div', { class: 'nav' },
@@ -102,7 +106,13 @@ async function renderContactsPage() {
   );
   app.appendChild(h);
 
-  // Quick-add toggle (hidden by default)
+  // Search field
+  const searchDiv = el('div', { class: 'search-bar' },
+    el('input', { type: 'text', id: 'contact-search', placeholder: 'Search contacts...', onkeyup: filterContacts }),
+  );
+  app.appendChild(searchDiv);
+
+  // Quick-add toggle
   const quickAddBtn = el('button', {
     class: 'secondary',
     onclick: () => {
@@ -131,32 +141,53 @@ async function renderContactsPage() {
   );
   app.appendChild(addForm);
 
-  // Contacts list — front and center
-  const listDiv = el('div', { class: 'mt-2' });
+  // Contacts list
+  const listDiv = el('div', { class: 'mt-2', id: 'contact-list' });
   app.appendChild(listDiv);
 
   try {
-    const contacts = await api('/api/contacts');
-    if (contacts.length === 0) {
-      listDiv.appendChild(el('div', { class: 'empty-state' },
-        el('p', {}, 'No contacts yet.'),
-        el('p', {}, 'Add an idea with the "+ Quick add idea" button above.'),
-      ));
-      return;
-    }
-    for (const c of contacts) {
-      const item = el('div', { class: 'contact-item', onclick: () => navigate(`contacts/${c.name}`) },
-        el('div', {},
-          el('div', { class: 'name' }, c.name),
-          c.tags && c.tags.length > 0 ? el('div', { class: 'tags' }, ...c.tags.map(tagPill)) : null,
-        ),
-        el('span', { class: 'text-muted' }, c.visibility),
-      );
-      listDiv.appendChild(item);
-    }
+    allContacts = await api('/api/contacts');
+    renderContactList(allContacts);
   } catch (err) {
     listDiv.appendChild(el('div', { class: 'empty-state' }, el('p', {}, `Error: ${err.message}`)));
   }
+}
+
+function renderContactList(contacts) {
+  const listDiv = document.getElementById('contact-list');
+  if (!listDiv) return;
+  listDiv.innerHTML = '';
+
+  if (contacts.length === 0) {
+    listDiv.appendChild(el('div', { class: 'empty-state' },
+      el('p', {}, allContacts.length === 0 ? 'No contacts yet.' : 'No contacts match your search.'),
+      allContacts.length === 0 ? el('p', {}, 'Add an idea with the "+ Quick add idea" button above.') : null,
+    ));
+    return;
+  }
+  for (const c of contacts) {
+    const item = el('div', { class: 'contact-item', onclick: () => navigate(`contacts/${c.name}`) },
+      el('div', {},
+        el('div', { class: 'name' }, c.name),
+        c.tags && c.tags.length > 0 ? el('div', { class: 'tags' }, ...c.tags.map(tagPill)) : null,
+      ),
+      el('span', { class: 'text-muted' }, c.visibility),
+    );
+    listDiv.appendChild(item);
+  }
+}
+
+function filterContacts() {
+  const query = document.getElementById('contact-search')?.value.toLowerCase().trim() || '';
+  if (!query) {
+    renderContactList(allContacts);
+    return;
+  }
+  const filtered = allContacts.filter(c =>
+    c.name.toLowerCase().includes(query) ||
+    (c.tags && c.tags.some(t => t.toLowerCase().includes(query)))
+  );
+  renderContactList(filtered);
 }
 
 // --- Contact detail page ---
@@ -164,6 +195,7 @@ async function renderContactsPage() {
 async function renderContactPage(name) {
   const app = document.getElementById('app');
   app.innerHTML = '';
+  currentContactName = name;
 
   app.appendChild(header(name));
 
@@ -178,6 +210,28 @@ async function renderContactPage(name) {
       ));
     }
 
+    // Action buttons — ABOVE tabs
+    const actionsRow = el('div', { class: 'actions-row' },
+      el('button', {
+        class: 'secondary btn-sm',
+        onclick: () => toggleForm('idea-form'),
+      }, '+ Add idea'),
+      el('button', {
+        class: 'secondary btn-sm',
+        onclick: () => toggleForm('gift-form'),
+      }, '+ Log gift'),
+      el('button', {
+        class: 'secondary btn-sm',
+        onclick: () => toggleForm('prefs-form'),
+      }, contact.preferences ? 'Edit preferences' : 'Set preferences'),
+    );
+    app.appendChild(actionsRow);
+
+    // Hidden forms (between actions and tabs)
+    app.appendChild(buildIdeaForm(name));
+    app.appendChild(buildGiftForm(name));
+    app.appendChild(buildPrefsForm(name, contact.preferences));
+
     // Tabs: Ideas / Given / Received
     const tabContainer = el('div', {});
     const tabs = el('div', { class: 'tabs' },
@@ -189,32 +243,6 @@ async function renderContactPage(name) {
     app.appendChild(tabContainer);
     showTab(tabContainer, 'ideas', contact);
 
-    // Action buttons (progressive disclosure)
-    const actionsRow = el('div', { class: 'actions-row mt-2' },
-      el('button', {
-        class: 'secondary',
-        onclick: () => toggleForm('idea-form'),
-      }, '+ Add idea'),
-      el('button', {
-        class: 'secondary',
-        onclick: () => toggleForm('gift-form'),
-      }, '+ Log gift'),
-      el('button', {
-        class: 'secondary',
-        onclick: () => toggleForm('prefs-form'),
-      }, contact.preferences ? 'Edit preferences' : 'Set preferences'),
-    );
-    app.appendChild(actionsRow);
-
-    // Add idea form (hidden)
-    app.appendChild(buildIdeaForm(name));
-
-    // Log gift form (hidden)
-    app.appendChild(buildGiftForm(name));
-
-    // Preferences form (hidden)
-    app.appendChild(buildPrefsForm(name, contact.preferences));
-
   } catch (err) {
     app.appendChild(el('div', { class: 'empty-state' }, el('p', {}, `Error: ${err.message}`)));
   }
@@ -223,7 +251,6 @@ async function renderContactPage(name) {
 function toggleForm(id) {
   const form = document.getElementById(id);
   if (!form) return;
-  // Hide all other forms
   ['idea-form', 'gift-form', 'prefs-form'].forEach(fid => {
     if (fid !== id) {
       const f = document.getElementById(fid);
@@ -310,12 +337,10 @@ function buildPrefsForm(name, existing) {
 // --- Tab content ---
 function showTab(container, tab, contact, clickedTab) {
   container.innerHTML = '';
-  // Update tab active states
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (clickedTab) {
     clickedTab.classList.add('active');
   } else {
-    // Default to first tab
     const first = document.querySelector('.tab');
     if (first) first.classList.add('active');
   }
@@ -326,7 +351,7 @@ function showTab(container, tab, contact, clickedTab) {
       return;
     }
     for (const idea of contact.ideas) {
-      container.appendChild(renderIdeaCard(idea));
+      container.appendChild(renderIdeaCard(idea, currentContactName));
     }
   } else if (tab === 'given') {
     if (!contact.gifts_given || contact.gifts_given.length === 0) {
@@ -347,7 +372,7 @@ function showTab(container, tab, contact, clickedTab) {
   }
 }
 
-function renderIdeaCard(idea) {
+function renderIdeaCard(idea, contactName) {
   const card = el('div', { class: 'idea-item' });
   card.appendChild(el('div', { class: 'item-name' }, idea.item));
 
@@ -368,8 +393,17 @@ function renderIdeaCard(idea) {
 
   card.appendChild(el('div', { class: 'id-line', style: 'margin-top: 4px;' }, idea.id));
 
-  // Delete button
+  // Actions
   const actions = el('div', { class: 'actions' });
+
+  // "I bought this" button — only for open ideas on contact pages
+  if (idea.status === 'open' && contactName) {
+    actions.appendChild(el('button', {
+      class: 'success btn-sm',
+      onclick: () => boughtIdea(idea, contactName),
+    }, '✓ I bought this'));
+  }
+
   actions.appendChild(el('button', {
     class: 'danger btn-sm',
     onclick: () => deleteIdea(idea.id),
@@ -402,6 +436,7 @@ function renderGiftCard(gift) {
 async function renderGeneralIdeasPage() {
   const app = document.getElementById('app');
   app.innerHTML = '';
+  currentContactName = '';
 
   app.appendChild(header('General Ideas'));
 
@@ -448,7 +483,7 @@ async function renderGeneralIdeasPage() {
       return;
     }
     for (const idea of ideas) {
-      listDiv.appendChild(renderIdeaCard(idea));
+      listDiv.appendChild(renderIdeaCard(idea, ''));
     }
   } catch (err) {
     listDiv.appendChild(el('div', { class: 'empty-state' }, el('p', {}, `Error: ${err.message}`)));
@@ -515,6 +550,17 @@ async function addGift(name) {
   } catch (err) { alert(err.message); }
 }
 
+async function boughtIdea(idea, contactName) {
+  try {
+    // Log the gift given — this also retires the matching idea via fuzzy match
+    await api(`/api/contacts/${encodeURIComponent(contactName)}/gifts/given`, {
+      method: 'POST',
+      body: JSON.stringify({ item: idea.item, notes: idea.notes || '' }),
+    });
+    renderContactPage(contactName);
+  } catch (err) { alert(err.message); }
+}
+
 async function addGeneralIdea() {
   const item = document.getElementById('gi-item').value.trim();
   const tags = document.getElementById('gi-tags').value.trim();
@@ -546,7 +592,6 @@ async function savePrefs(name) {
 async function deleteIdea(id) {
   if (!confirm('Delete this idea?')) return;
   try {
-    // Determine if we're on a contact page or general ideas page
     const parts = currentRoute.split('/').filter(Boolean);
     if (parts[0] === 'contacts' && parts[1]) {
       const name = decodeURIComponent(parts[1]);
