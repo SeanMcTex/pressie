@@ -1,6 +1,6 @@
 # Pressie
 
-**An agent-friendly gift tracking CLI.**
+**Your agent's gift memory.** An agent-friendly gift tracking CLI.
 
 Pressie tracks gift ideas, gifts given, and gifts received — designed to be used directly by you or mediated by an AI agent. Plain JSON storage, plugin-based contacts, git sync for multiplayer.
 

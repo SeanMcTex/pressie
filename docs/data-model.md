@@ -164,9 +164,27 @@ When querying `pressie ideas --for "Kris"`:
 1. Load Kris's contact file → get her `tags` array.
 2. Load all her direct ideas (from her contact file).
 3. Load `_ideas-general.json` → filter where any tag in the idea's `tags` array intersects Kris's `tags` array.
-4. Merge and return, sorted by `added` date (newest first).
+4. Filter out any idea whose `item` text matches or closely resembles a gift in Kris's `gifts_given` (duplicate avoidance — see below).
+5. Merge and return, sorted by `added` date (newest first).
 
 If the contact has no `tags` defined, return only their direct ideas (no general matching).
+
+## Purchased Tracking & Duplicate Avoidance
+
+### Purchased Tracking
+
+When a gift is logged via `add-given`, it's appended to `gifts_given` in the contact's file. If the gift item matches an existing open idea for that contact, the idea's `status` is set to `purchased` so it no longer surfaces in `ideas` queries.
+
+### Duplicate Avoidance
+
+The `ideas` command filters out suggestions that resemble past gifts given to the same person. This prevents repeating a gift you've already given.
+
+Matching logic:
+- Normalize item text: lowercase, trim, collapse whitespace.
+- Exact match: if a gift's `item` equals an idea's `item`, suppress the idea.
+- Substring match: if one normalized item is a substring of the other, suppress the idea.
+
+This is intentionally fuzzy — it errs on the side of hiding potential repeats. The user can still see purchased/archived ideas via `pressie ideas --status purchased` if they want the full history.
 
 ## Visibility Rules
 

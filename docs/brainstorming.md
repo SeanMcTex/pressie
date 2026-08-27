@@ -121,6 +121,17 @@ When querying ideas for a person, return:
 
 This lets you capture "saw this, good for someone" without knowing who yet.
 
+### Purchased Tracking & Duplicate Avoidance
+
+When you buy a gift, log it with `add-given`. This serves two purposes:
+
+1. **Records what you gave** — date, occasion, price, notes — the historical record.
+2. **Retires the idea** — if the gift item corresponds to an existing idea, that idea's status flips to `purchased` so it stops surfacing in future `ideas` queries.
+
+The `ideas` command must also filter out items that resemble past gifts given to that person. Nobody wants to see "letterpress print" as an idea after already giving one. Matching is fuzzy: exact item text match first, then normalized substring overlap (case-insensitive, trimmed). This prevents accidental repeats without requiring rigid IDs linking gifts to ideas.
+
+This is a core differentiator — the tool isn't just a list of ideas, it's a memory that learns what you've already done.
+
 ### CLI Commands
 
 ```
@@ -208,7 +219,7 @@ Irish/British slang for "present" — fits the vibe.
 1. Core data model with private/shared partition
 2. `add-given`, `add-received`, `add-idea`, `list`, `ideas`, `assign`
 3. Google Contacts plugin + manual plugin
-4. General ideas list with tag-based matching
+4. General ideas list with tag-based matching + duplicate avoidance (filter past gifts given)
 5. `sync` via git
 6. `_index.json` config
 7. `init` command
