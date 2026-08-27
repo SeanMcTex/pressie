@@ -68,6 +68,7 @@ func (s *Server) registerRoutes() {
 
 	// SPA static files (embedded)
 	s.mux.HandleFunc("GET /", s.handleSPA)
+	s.mux.HandleFunc("POST /login", s.handleLoginSubmit)
 }
 
 // --- Auth middleware ---
@@ -101,12 +102,18 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Login page for browser requests, 401 for API
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
-			return
-		}
-		s.serveLogin(w, r)
+	// Allow POST /login through (the login form submit handler authenticates itself).
+	if r.Method == "POST" && r.URL.Path == "/login" {
+		next.ServeHTTP(w, r)
+		return
+	}
+
+	// Login page for browser requests, 401 for API
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+	s.serveLogin(w, r)
 	})
 }
 
