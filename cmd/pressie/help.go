@@ -202,3 +202,15 @@ func helpDeleteIdea() {
 		`pressie delete-idea --idea abc-123 --for "Kris"`,
 	)
 }
+
+func helpServe() {
+	printHelp("serve",
+		"Start the pressie web server",
+		" [flags]",
+		`  --port <number>          Port to listen on (default: 7612)
+  --auth-token <token>     Enable token auth. Required to bind non-localhost.
+                           Token is checked as Bearer header, ?token= query param, or cookie.
+                           Without this flag, server is localhost-only with no auth.`,
+		`pressie serve --auth-token mysecret`,
+	)
+}

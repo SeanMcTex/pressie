@@ -45,6 +45,8 @@ func main() {
 		cmdSync(args)
 	case "plugins":
 		cmdPlugins(args)
+	case "serve":
+		cmdServe(args)
 	case "version", "--version", "-v":
 		fmt.Printf("pressie %s\n", version)
 	case "help", "--help", "-h":
@@ -72,6 +74,7 @@ Commands (implemented):
   ideas                    Show ideas for a contact (filters past gifts)
   list                     List gifts given/received for a contact
   prefs                    Read or set freeform preferences for a contact
+  serve                    Start the web server
 
 Commands (not yet implemented):
   assign <idea-id>         Assign a general idea to a specific person
