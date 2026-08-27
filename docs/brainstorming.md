@@ -251,3 +251,31 @@ pressie/
       _private/
         example.json
 ```
+
+## Discovery & Distribution
+
+### Standard Go ecosystem paths
+- **GitHub repo** — source of truth. Good README, topics/tags: `cli`, `gifts`, `go`, `agent`, `agent-friendly`.
+- **Homebrew tap** — `brew install pressie`. Goreleaser automates tap formula generation on release.
+- **Awesome Go** — curated list at <https://github.com/avelino/awesome-go>. PR once functional.
+- **Go Wiki** — <https://github.com/golang/go/wiki> community wiki.
+- **r/golang** — Reddit community for Go tooling shares.
+- **Hacker News / Product Hunt** — launch posts for visibility.
+
+### Goreleaser
+Use [Goreleaser](https://goreleaser.com/) to automate cross-compilation and release artifacts:
+- Build all targets (darwin/arm64, darwin/amd64, linux/amd64, linux/arm64, windows/amd64)
+- Generate Homebrew tap formulas automatically
+- GitHub release automation (changelog, binaries, checksums)
+- `brew install pressie` just works once the tap is published
+
+### OpenClaw skill integration
+Pressie doesn't need to be an OpenClaw plugin — it's a standalone CLI. But it can ship a thin skill file that teaches any OpenClaw agent how to use it:
+
+- Ship `skills/pressie/SKILL.md` in the Pressie repo
+- Documents the CLI commands, data model, and agent-friendly usage patterns
+- Users install with `openclaw skills install` (or point OpenClaw at the skill path)
+- Any OpenClaw agent can then: `pressie add-idea --for "Kris" --item "..."`, `pressie ideas --for "Kris"`, etc.
+- This is the native discovery path *within* OpenClaw — the agent knows about Pressie because of the skill, not because Pressie is bundled with OpenClaw.
+
+This is a model for how any agent-friendly CLI tool can integrate with OpenClaw: **be a good CLI first, ship a skill file second.** The skill is documentation for the agent, not a runtime dependency.
