@@ -1,9 +1,11 @@
 package main
 
-import "fmt"
-
 // cmdAssign moves a general idea to a specific contact.
 // TODO: implement
 func cmdAssign(args []string) {
-	fmt.Println("assign: not yet implemented")
+	if wantsHelp(args) {
+		helpAssign()
+		return
+	}
+	println("assign: not yet implemented")
 }

@@ -53,46 +53,64 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, `pressie %s — agent-friendly gift tracking
+	fmt.Fprintf(os.Stderr, `pressie %s — your agent's gift memory
 
 Usage:
   pressie <command> [options]
+  pressie <command> -h        Per-command help
 
-Commands:
+Commands (implemented):
   init [path]              Initialize a gifts directory
-  add-given                Log a gift you gave
-  add-received             Log a gift you received
   add-idea                 Add a gift idea (for a person or "anyone")
-  list                     List gifts for a contact
-  ideas                    Show ideas for a contact (includes tag-matched general)
+  add-given                Log a gift you gave (retires matching ideas)
+  add-received             Log a gift you received
+  ideas                    Show ideas for a contact (filters past gifts)
+  list                     List gifts given/received for a contact
+
+Commands (not yet implemented):
   assign <idea-id>         Assign a general idea to a specific person
   search <query>           Search contacts via plugin
   resolve <name>           Resolve a name to a contact key
   stats                    Show statistics (spending, counts)
   sync                     Git pull + push
   plugins                  List configured plugins
-  version                  Show version
-  help                     Show this help
 
-Options:
+Quick start:
+  pressie init ~/gifts
+  pressie add-idea --for "Kris" --item "Letterpress print" --tags art,irish
+  pressie ideas --for "Kris"
+  pressie add-given --to "Kris" --item "Letterpress print" --occasion christmas
+  pressie ideas --for "Kris"          # "Letterpress print" now filtered out
+
+Required flags by command:
+  init                    [path]
+  add-idea                --for <name> --item <text>
+  add-given               --to <name> --item <text>
+  add-received            --from <name> --item <text>
+  ideas                   --for <name>  (or "anyone" for general ideas)
+  list                    --for <name>
+
+Common flags:
   --for <name>             Target contact (by name or key)
   --to <name>              Recipient (for add-given)
   --from <name>            Giver (for add-received)
   --item <text>            Gift item description
   --occasion <text>        Occasion (christmas, birthday, etc.)
-  --date <YYYY-MM-DD>      Date of the gift
+  --date <YYYY-MM-DD>      Date of the gift (default: today)
   --url <url>              Link to product or inspiration
   --tags <a,b,c>           Comma-separated tags
   --price <number>         Price or price estimate
   --notes <text>           Free-text notes
   --private                Store in private directory (default)
-  --shared                 Store in shared directory
-  --status <status>        Filter by status (open, purchased, archived)
+  --shared                 Store in shared directory (visible to collaborators)
+  --status <status>        Filter: open, purchased, archived
   --direction <dir>        Filter: given, received, or both
-  --year <YYYY>            Filter by year (for stats)
+  --year <YYYY>            Filter by year
 
 Environment:
   PRESSIE_DIR              Path to gifts directory (default: ./gifts or ~/.pressie)
+
+Run `+"`pressie <command> -h`"+` for detailed help on any command.
 
 `, version)
 }

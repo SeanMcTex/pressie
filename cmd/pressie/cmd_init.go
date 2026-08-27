@@ -11,6 +11,10 @@ import (
 
 // cmdInit initializes a new gifts directory with the default structure.
 func cmdInit(args []string) {
+	if wantsHelp(args) {
+		helpInit()
+		return
+	}
 	cfg, err := config.ParseArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pressie: %s\n", err)

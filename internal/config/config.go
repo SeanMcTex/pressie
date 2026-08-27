@@ -29,12 +29,21 @@ type Config struct {
 	Status      string
 	Direction   string
 	Year        string
+	Idea        string // idea ID for precise retirement in add-given
 }
 
 // DefaultGiftsDir returns the default gifts directory path.
+// Checks PRESSIE_DIR env, then ./gifts in the current directory, then ~/.pressie.
 func DefaultGiftsDir() string {
 	if env := os.Getenv("PRESSIE_DIR"); env != "" {
 		return env
+	}
+	if _, err := os.Stat("gifts"); err == nil {
+		abs, err := filepath.Abs("gifts")
+		if err != nil {
+			return "gifts"
+		}
+		return abs
 	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".pressie")
@@ -120,8 +129,10 @@ func ParseArgs(args []string) (*Config, error) {
 			cfg.Status = value
 		case "--direction":
 			cfg.Direction = value
-		case "--year":
-			cfg.Year = value
+	case "--year":
+		cfg.Year = value
+	case "--idea":
+		cfg.Idea = value
 		default:
 			return nil, fmt.Errorf("unknown flag: %s", name)
 		}
