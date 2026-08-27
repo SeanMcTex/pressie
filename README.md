@@ -17,14 +17,10 @@ Every existing gift tracker is a walled-garden app. None are designed to work wi
 ## Install
 
 ```bash
-brew install pressie
-```
-
-*Or build from source:*
-
-```bash
 go install github.com/SeanMcTex/pressie/cmd/pressie@latest
 ```
+
+The binary is placed in `$(go env GOPATH)/bin`. Ensure that's on your `$PATH`.
 
 ## Quick Start
 
