@@ -2,7 +2,20 @@
 
 **Your agent's gift memory.** An agent-friendly gift tracking CLI with a built-in web UI.
 
+![Pressie Robot Illustration](docs/robot.jpeg)
+
 Pressie tracks gift ideas, gifts given, and gifts received — designed to be used directly by you, mediated by an AI agent, or through a web browser. Plain JSON storage, plugin-based contacts, no database, no lock-in.
+
+## Examples
+
+### Using OpenClaw
+
+![OpenClaw Session](docs/agent-session.png)
+
+### Using the Web Interface
+
+![Web Session](docs/web-session.png)
+
 
 ## Why?
 
@@ -110,18 +123,18 @@ Write plugins for any contact source. See [docs/plugin-spec.md](docs/plugin-spec
 
 Run `pressie -h` for the full list. Each command also has per-command help: `pressie <command> -h`.
 
-| Command | Description |
-|---|---|
-| `init` | Initialize a gifts directory |
-| `add-idea` | Add a gift idea (for a person or "anyone") |
-| `add-given` | Log a gift you gave (retires matching ideas) |
-| `add-received` | Log a gift you received |
-| `ideas` | Show ideas for a contact (filters past gifts) |
-| `list` | List gifts given/received for a contact |
-| `prefs` | Read or set freeform preferences for a contact |
-| `delete-idea` | Delete an idea by ID |
-| `serve` | Start the web server |
-| `help` | Show all commands |
+| Command        | Description                                    |
+| -------------- | ---------------------------------------------- |
+| `init`         | Initialize a gifts directory                   |
+| `add-idea`     | Add a gift idea (for a person or "anyone")     |
+| `add-given`    | Log a gift you gave (retires matching ideas)   |
+| `add-received` | Log a gift you received                        |
+| `ideas`        | Show ideas for a contact (filters past gifts)  |
+| `list`         | List gifts given/received for a contact        |
+| `prefs`        | Read or set freeform preferences for a contact |
+| `delete-idea`  | Delete an idea by ID                           |
+| `serve`        | Start the web server                           |
+| `help`         | Show all commands                              |
 
 ## Documentation
 
