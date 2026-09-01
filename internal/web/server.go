@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -171,6 +172,7 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 			Tags:       m.Tags,
 		})
 	}
+	sort.Slice(contacts, func(i, j int) bool { return contacts[i].Name < contacts[j].Name })
 	writeJSON(w, http.StatusOK, contacts)
 }
 
