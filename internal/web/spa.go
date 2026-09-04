@@ -19,6 +19,22 @@ func (s *Server) handleSPA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Access key in URL (?token=...): authenticate and set a cookie so
+	// subsequent navigations (and asset/API fetches) work without the
+	// query param. Strip the param by redirecting to the clean path.
+	if s.authToken != "" && r.URL.Query().Get("token") == s.authToken {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "pressie_auth",
+			Value:    s.authToken,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   86400 * 30, // 30 days
+		})
+		http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
+		return
+	}
+
 	path := r.URL.Path
 	if path == "/" {
 		path = "/index.html"
@@ -41,6 +57,9 @@ func (s *Server) handleSPA(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveStatic(w http.ResponseWriter, path string, data []byte) {
+	// Assets are embedded and versioned by binary rebuild; force revalidation
+	// so users get updates without stale cached JS/CSS.
+	w.Header().Set("Cache-Control", "no-cache")
 	switch {
 	case strings.HasSuffix(path, ".html"):
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

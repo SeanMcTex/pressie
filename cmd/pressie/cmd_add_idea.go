@@ -87,6 +87,7 @@ func addContactIdea(cfg *config.Config, idea *store.Idea) {
 		fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
 		os.Exit(1)
 	}
+	rejectArchived(idx, key, name)
 
 	cf, err := gifts.EnsureContactFile(cfg.GiftsDir, relPath, key, name)
 	if err != nil {

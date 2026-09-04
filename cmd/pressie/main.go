@@ -27,6 +27,14 @@ func main() {
 		cmdAddIdea(args)
 	case "delete-idea":
 		cmdDeleteIdea(args)
+	case "archive-contact":
+		cmdArchiveContact(args)
+	case "unarchive-contact":
+		cmdUnarchiveContact(args)
+	case "edit-idea":
+		cmdEditIdea(args)
+	case "edit-gift":
+		cmdEditGift(args)
 	case "list":
 		cmdList(args)
 	case "ideas":
@@ -69,12 +77,16 @@ Commands (implemented):
   init [path]              Initialize a gifts directory
   add-idea                 Add a gift idea (for a person or "anyone")
   delete-idea              Delete an idea by ID
-  add-given                Log a gift you gave (retires matching ideas)
+  prefs                    Read, set, or append freeform preferences
   add-received             Log a gift you received
   ideas                    Show ideas for a contact (filters past gifts)
   list                     List gifts given/received for a contact
   prefs                    Read or set freeform preferences for a contact
   serve                    Start the web server
+  archive-contact          Hide a recipient from active use (reversible)
+  unarchive-contact        Restore an archived recipient
+  edit-idea                Edit an existing idea by ID
+  edit-gift                Edit a logged gift (given or received)
 
 Commands (not yet implemented):
   assign <idea-id>         Assign a general idea to a specific person
@@ -114,7 +126,7 @@ Common flags:
   --notes <text>           Free-text notes
   --private                Store in private directory (default)
   --shared                 Store in shared directory (visible to collaborators)
-  --status <status>        Filter: open, purchased, archived
+  --status <status>        Filter: open, given, archived
   --direction <dir>        Filter: given, received, or both
   --year <YYYY>            Filter by year
 

@@ -5,6 +5,7 @@
 const API = '';
 let currentRoute = '';
 let currentContactName = '';
+let currentContactCache = null;
 
 // --- Router ---
 function router() {
@@ -202,12 +203,23 @@ async function renderContactPage(name) {
   try {
     const contact = await api(`/api/contacts/${encodeURIComponent(name)}`);
 
+    currentContactCache = contact;
+
     // Preferences (read-only summary, edit behind a button)
     if (contact.preferences) {
       app.appendChild(el('div', { class: 'preferences-box' },
         el('div', { class: 'label' }, 'Preferences'),
         el('div', {}, contact.preferences),
       ));
+    }
+
+    // Archived banner (contact detail is still reachable via direct link)
+    if (contact.archived) {
+      const banner = el('div', { class: 'archived-banner' },
+        el('span', {}, 'This contact is archived — hidden from the contacts list.'),
+        el('button', { class: 'secondary btn-sm', onclick: () => unarchiveContact(contact.contact_key || name) }, 'Unarchive'),
+      );
+      app.appendChild(banner);
     }
 
     // Action buttons — ABOVE tabs
@@ -224,13 +236,17 @@ async function renderContactPage(name) {
         class: 'secondary btn-sm',
         onclick: () => toggleForm('prefs-form'),
       }, contact.preferences ? 'Edit preferences' : 'Set preferences'),
+      el('button', {
+        class: 'secondary btn-sm danger',
+        onclick: () => archiveContact(name),
+      }, 'Archive'),
     );
-    app.appendChild(actionsRow);
 
     // Hidden forms (between actions and tabs)
     app.appendChild(buildIdeaForm(name));
     app.appendChild(buildGiftForm(name));
     app.appendChild(buildPrefsForm(name, contact.preferences));
+    app.appendChild(actionsRow);
 
     // Tabs: Ideas / Given / Received
     const tabContainer = el('div', {});
@@ -335,22 +351,38 @@ function buildPrefsForm(name, existing) {
 }
 
 // --- Tab content ---
+// Show given (retired) ideas in the Ideas tab? Hidden by default to
+// match the CLI's `ideas` behavior (open only). Session-scoped toggle.
+let givenIdeasVisible = false;
+
+function toggleGivenIdeas() {
+  givenIdeasVisible = !givenIdeasVisible;
+  const container = document.querySelector('.tabs').nextElementSibling;
+  const contact = currentContactCache;
+  if (container && contact) {
+    showTab(container, 'ideas', contact);
+  }
+}
+
 function showTab(container, tab, contact, clickedTab) {
   container.innerHTML = '';
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (clickedTab) {
     clickedTab.classList.add('active');
-  } else {
-    const first = document.querySelector('.tab');
-    if (first) first.classList.add('active');
   }
 
   if (tab === 'ideas') {
-    if (!contact.ideas || contact.ideas.length === 0) {
-      container.appendChild(el('div', { class: 'empty-state' }, el('p', {}, 'No ideas yet.')));
+    const visible = (contact.ideas || []).filter(i => givenIdeasVisible ? true : i.status === 'open');
+    if (visible.length === 0) {
+      container.appendChild(el('div', { class: 'empty-state' }, el('p', {},
+        givenIdeasVisible ? 'No ideas yet.' : 'No open ideas.')));
+      if (!givenIdeasVisible && (contact.ideas || []).some(i => i.status !== 'open')) {
+        container.appendChild(el('p', { class: 'text-muted' }, 'Given ideas are hidden — '));
+        container.lastChild.appendChild(el('a', { href: '#', onclick: (e) => { e.preventDefault(); toggleGivenIdeas(); } }, 'show them'));
+      }
       return;
     }
-    for (const idea of contact.ideas) {
+    for (const idea of visible) {
       container.appendChild(renderIdeaCard(idea, currentContactName));
     }
   } else if (tab === 'given') {
@@ -396,14 +428,18 @@ function renderIdeaCard(idea, contactName) {
   // Actions
   const actions = el('div', { class: 'actions' });
 
-  // "I bought this" button — only for open ideas on contact pages
+  // "Given" button — only for open ideas on contact pages
   if (idea.status === 'open' && contactName) {
     actions.appendChild(el('button', {
       class: 'success btn-sm',
-      onclick: () => boughtIdea(idea, contactName),
-    }, '✓ I bought this'));
+      onclick: () => givenIdea(idea, contactName),
+    }, '✓ Mark given'));
   }
 
+  actions.appendChild(el('button', {
+    class: 'secondary btn-sm',
+    onclick: () => editIdea(idea, contactName),
+  }, 'Edit'));
   actions.appendChild(el('button', {
     class: 'danger btn-sm',
     onclick: () => deleteIdea(idea.id),
@@ -422,6 +458,10 @@ function renderGiftCard(gift) {
   if (gift.occasion) meta.appendChild(el('span', {}, `occasion: ${gift.occasion}`));
   if (gift.price) meta.appendChild(el('span', {}, `price: ${gift.currency || 'USD'} ${gift.price}`));
   card.appendChild(meta);
+
+  card.appendChild(el('div', { class: 'actions' },
+    el('button', { class: 'secondary btn-sm', onclick: () => editGift(gift, currentContactName) }, 'Edit'),
+  ));
 
   if (gift.notes) {
     card.appendChild(el('div', { class: 'text-muted', style: 'margin-top: 4px;' }, gift.notes));
@@ -550,7 +590,7 @@ async function addGift(name) {
   } catch (err) { alert(err.message); }
 }
 
-async function boughtIdea(idea, contactName) {
+async function givenIdea(idea, contactName) {
   try {
     // Log the gift given — this also retires the matching idea via fuzzy match
     await api(`/api/contacts/${encodeURIComponent(contactName)}/gifts/given`, {
@@ -601,6 +641,117 @@ async function deleteIdea(id) {
     }
     router();
   } catch (err) { alert(err.message); }
+}
+
+
+async function archiveContact(name) {
+  if (!confirm(`Archive ${name}? They will be hidden from the contacts list and cannot receive new gifts or ideas. Their data is kept — you can restore them later.`)) return;
+  try {
+    await api(`/api/contacts/${encodeURIComponent(name)}/archive`, { method: 'POST' });
+    navigate('');
+  } catch (err) { alert(err.message); }
+}
+
+async function unarchiveContact(name) {
+  try {
+    await api(`/api/contacts/${encodeURIComponent(name)}/unarchive`, { method: 'POST' });
+    router();
+  } catch (err) { alert(err.message); }
+}
+
+function showEditForm(fields, onSave) {
+  const existing = document.getElementById('edit-dialog');
+  if (existing) existing.remove();
+
+  const overlay = el('div', { class: 'edit-overlay', id: 'edit-dialog' },
+    el('div', { class: 'edit-dialog' },
+      el('h3', {}, 'Edit'),
+      ...fields,
+      el('div', { style: 'margin-top: 12px; display: flex; gap: 8px;' },
+        el('button', { onclick: () => { onSave(); } }, 'Save'),
+        el('button', { class: 'secondary', onclick: closeEdit }, 'Cancel'),
+      ),
+    ),
+  );
+  overlay.onclick = (e) => { if (e.target === overlay) closeEdit(); };
+  document.body.appendChild(overlay);
+}
+
+function closeEdit() {
+  const d = document.getElementById('edit-dialog');
+  if (d) d.remove();
+}
+
+function editField(labelText, id, value, type = 'text') {
+  return el('div', { class: 'form-group' },
+    el('label', {}, labelText),
+    el('input', { type, id: `edit-${id}`, value: value == null ? '' : String(value) }),
+  );
+}
+
+async function editIdea(idea, contactName) {
+  showEditForm([
+    editField('Item', 'item', idea.item),
+    editField('Tags (comma-separated)', 'tags', (idea.tags || []).join(', ')),
+    editField('URL', 'url', idea.url),
+    editField('Price estimate (empty to clear)', 'price', idea.price_estimate, 'number'),
+    editField('Notes', 'notes', idea.notes),
+  ], async () => {
+    const val = (id) => document.getElementById(`edit-${id}`)?.value;
+    const body = {
+      item: val('item'),
+      url: val('url'),
+      tags: val('tags') ? val('tags').split(',').map(t => t.trim()).filter(Boolean) : [],
+      notes: val('notes'),
+    };
+    const priceStr = val('price');
+    if (priceStr === '') {
+      body.price = 0;
+    } else if (priceStr) {
+      const p = parseFloat(priceStr);
+      if (!isNaN(p)) body.price = p;
+    }
+    try {
+      if (contactName) {
+        await api(`/api/contacts/${encodeURIComponent(contactName)}/ideas/${idea.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      } else {
+        await api(`/api/ideas/${idea.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      }
+      closeEdit();
+      router();
+    } catch (err) { alert(err.message); }
+  });
+}
+
+async function editGift(gift, contactName) {
+  if (!contactName) return;
+  showEditForm([
+    editField('Item', 'item', gift.item),
+    editField('Occasion', 'occasion', gift.occasion),
+    editField('Date (YYYY-MM-DD)', 'date', gift.date),
+    editField('Price (empty to clear)', 'price', gift.price, 'number'),
+    editField('Notes', 'notes', gift.notes),
+  ], async () => {
+    const val = (id) => document.getElementById(`edit-${id}`)?.value;
+    const body = {
+      item: val('item'),
+      occasion: val('occasion'),
+      date: val('date'),
+      notes: val('notes'),
+    };
+    const priceStr = val('price');
+    if (priceStr === '') {
+      body.price = 0;
+    } else if (priceStr) {
+      const p = parseFloat(priceStr);
+      if (!isNaN(p)) body.price = p;
+    }
+    try {
+      await api(`/api/contacts/${encodeURIComponent(contactName)}/gifts/${gift.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      closeEdit();
+      router();
+    } catch (err) { alert(err.message); }
+  });
 }
 
 // --- Init ---

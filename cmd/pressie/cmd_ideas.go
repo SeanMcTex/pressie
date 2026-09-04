@@ -15,7 +15,7 @@ import (
 
 // cmdIdeas shows ideas for a contact, including tag-matched general ideas.
 // Open ideas that resemble past gifts given are filtered out (duplicate avoidance),
-// unless --status is set to show purchased/archived ideas.
+// unless --status is set to show given/archived ideas.
 func cmdIdeas(args []string) {
 	if wantsHelp(args) {
 		helpIdeas()
@@ -27,6 +27,10 @@ func cmdIdeas(args []string) {
 		os.Exit(1)
 	}
 
+	// Accept legacy status value for backward compatibility.
+	if cfg.Status == store.LegacyStatusPurchased {
+		cfg.Status = "given"
+	}
 	if cfg.For == "" || cfg.For == "anyone" {
 		listGeneralIdeas(cfg)
 		return
@@ -44,6 +48,7 @@ func listGeneralIdeas(cfg *config.Config) {
 	}
 
 	ideas = filterByStatus(ideas, cfg.Status)
+	ideas = filterByTag(ideas, cfg.Tag)
 
 	if len(ideas) == 0 {
 		fmt.Println("No general ideas yet.")
@@ -104,12 +109,13 @@ func listContactIdeas(cfg *config.Config) {
 		}
 	}
 
-	// Filter by status (default: open).
+	// Filter by status (default: open) and tag.
 	combined = filterByStatus(combined, statusFilter)
+	combined = filterByTag(combined, cfg.Tag)
 
 	// Duplicate avoidance: filter out ideas that resemble past gifts given.
 	// Only applies when showing open ideas (the default). If the user
-	// explicitly requests --status purchased or archived, show everything.
+	// explicitly requests --status given or archived, show everything.
 	if cfg.Status == "" {
 		combined = filterDuplicates(combined, cf.GiftsGiven)
 	}
@@ -143,6 +149,21 @@ func filterByStatus(ideas []store.Idea, status string) []store.Idea {
 	filtered := make([]store.Idea, 0, len(ideas))
 	for _, idea := range ideas {
 		if idea.Status == status {
+			filtered = append(filtered, idea)
+		}
+	}
+	return filtered
+}
+
+// filterByTag returns only ideas containing the given tag (case-insensitive).
+// Empty tag returns all ideas.
+func filterByTag(ideas []store.Idea, tag string) []store.Idea {
+	if tag == "" {
+		return ideas
+	}
+	filtered := make([]store.Idea, 0, len(ideas))
+	for _, idea := range ideas {
+		if tagsIntersect(idea.Tags, []string{tag}) {
 			filtered = append(filtered, idea)
 		}
 	}

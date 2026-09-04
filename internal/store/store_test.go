@@ -130,7 +130,8 @@ func TestSaveLoadGeneralIdeas_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	ideas := []Idea{
 		{ID: "g1", Item: "Ceramic pour-over", Tags: []string{"kitchen"}, Status: "open", Added: "2026-08-27"},
-		{ID: "g2", Item: "Wool scarf", Tags: []string{"warm"}, Status: "purchased", Added: "2026-08-20"},
+		{ID: "g2", Item: "Wool scarf", Tags: []string{"warm"}, Status: "given", Added: "2026-08-20"},
+		{ID: "g3", Item: "Legacy scarf", Tags: []string{"warm"}, Status: "purchased", Added: "2026-08-19"},
 	}
 
 	if err := SaveGeneralIdeas(dir, ideas); err != nil {
@@ -141,14 +142,18 @@ func TestSaveLoadGeneralIdeas_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadGeneralIdeas: %v", err)
 	}
-	if len(loaded) != 2 {
-		t.Fatalf("len = %d, want 2", len(loaded))
+	if len(loaded) != 3 {
+		t.Fatalf("len = %d, want 3", len(loaded))
 	}
 	if loaded[0].Item != "Ceramic pour-over" {
 		t.Errorf("Item[0] = %q", loaded[0].Item)
 	}
-	if loaded[1].Status != "purchased" {
-		t.Errorf("Status[1] = %q", loaded[1].Status)
+	if loaded[1].Status != "given" {
+		t.Errorf("Status[1] = %q, want given", loaded[1].Status)
+	}
+	// Legacy "purchased" must be normalized to "given" on load.
+	if loaded[2].Status != "given" {
+		t.Errorf("Status[2] = %q, want given (legacy purchased normalized)", loaded[2].Status)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/SeanMcTex/pressie/internal/config"
 	"github.com/SeanMcTex/pressie/internal/gifts"
@@ -46,18 +47,37 @@ func cmdPrefs(args []string) {
 	}
 
 	if cfg.HasPrefs {
-		// Set mode: replace preferences.
-		cf.Preferences = cfg.Prefs
-		if err := store.SaveContactFile(absPath, cf); err != nil {
-			fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
-			os.Exit(1)
+		if cfg.AppendPrefs {
+			// Append mode: add to existing preferences.
+			if cf.Preferences == "" {
+				cf.Preferences = cfg.Prefs
+			} else {
+				cf.Preferences = strings.TrimRight(cf.Preferences, "\n") + "\n" + cfg.Prefs
+			}
+			if err := store.SaveContactFile(absPath, cf); err != nil {
+				fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
+				os.Exit(1)
+			}
+			gifts.RegisterContact(idx, key, relPath, cfg.Visibility, nil)
+			if err := store.SaveIndex(cfg.GiftsDir, idx); err != nil {
+				fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Preferences appended for %s.\n", name)
+		} else {
+			// Set mode: replace preferences.
+			cf.Preferences = cfg.Prefs
+			if err := store.SaveContactFile(absPath, cf); err != nil {
+				fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
+				os.Exit(1)
+			}
+			gifts.RegisterContact(idx, key, relPath, cfg.Visibility, nil)
+			if err := store.SaveIndex(cfg.GiftsDir, idx); err != nil {
+				fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Preferences set for %s.\n", name)
 		}
-		gifts.RegisterContact(idx, key, relPath, cfg.Visibility, nil)
-		if err := store.SaveIndex(cfg.GiftsDir, idx); err != nil {
-			fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Preferences set for %s.\n", name)
 	} else {
 		// Read mode: print current preferences.
 		if cf.Preferences == "" {

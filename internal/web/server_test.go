@@ -289,8 +289,8 @@ func TestHandleAddGiven_RetiresMatchingIdea(t *testing.T) {
 	if len(cf.Ideas) != 1 {
 		t.Fatalf("Ideas len = %d, want 1", len(cf.Ideas))
 	}
-	if cf.Ideas[0].Status != "purchased" {
-		t.Errorf("Status = %q, want purchased", cf.Ideas[0].Status)
+	if cf.Ideas[0].Status != "given" {
+		t.Errorf("Status = %q, want given", cf.Ideas[0].Status)
 	}
 }
 

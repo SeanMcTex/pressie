@@ -17,11 +17,16 @@ type Config struct {
 	For         string
 	To          string
 	From        string
-	Item        string
 	Occasion    string
+	HasOccasion bool
+	Item        string
+	HasItem     bool
 	Date        string
+	HasDate     bool
 	URL         string
+	HasURL      bool
 	Tags        []string
+	HasTags     bool
 	Price       float64
 	HasPrice    bool
 	Notes       string
@@ -29,9 +34,12 @@ type Config struct {
 	Status      string
 	Direction   string
 	Year        string
+	Tag         string // --tag filter for ideas
 	Idea        string // idea ID for precise retirement in add-given
+	ID          string // generic --id flag (edit-idea/edit-gift)
 	Prefs       string // freeform preferences text for a contact
-	HasPrefs    bool   // true if --set was passed
+	HasPrefs    bool   // true if --set or --append was passed
+	AppendPrefs bool   // true if --append was passed (vs --set)
 }
 
 // DefaultGiftsDir returns the default gifts directory path.
@@ -108,18 +116,24 @@ func ParseArgs(args []string) (*Config, error) {
 			cfg.To = value
 		case "--from":
 			cfg.From = value
-		case "--item":
-			cfg.Item = value
 		case "--occasion":
 			cfg.Occasion = value
+			cfg.HasOccasion = true
+		case "--item":
+			cfg.Item = value
 		case "--date":
 			cfg.Date = value
+			cfg.HasDate = true
 		case "--url":
 			cfg.URL = value
+			cfg.HasURL = true
 		case "--notes":
 			cfg.Notes = value
 		case "--tags":
 			cfg.Tags = parseTags(value)
+			cfg.HasTags = true
+		case "--id":
+			cfg.ID = value
 		case "--price":
 			p, err := strconv.ParseFloat(value, 64)
 			if err != nil {
@@ -138,6 +152,12 @@ func ParseArgs(args []string) (*Config, error) {
 		case "--set":
 			cfg.Prefs = value
 			cfg.HasPrefs = true
+		case "--append":
+			cfg.Prefs = value
+			cfg.HasPrefs = true
+			cfg.AppendPrefs = true
+		case "--tag":
+			cfg.Tag = value
 		default:
 			return nil, fmt.Errorf("unknown flag: %s", name)
 		}

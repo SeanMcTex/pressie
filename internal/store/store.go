@@ -38,6 +38,18 @@ type Idea struct {
 	AssignedTo    *string  `json:"assigned_to,omitempty"`
 }
 
+// Legacy status value used before the "given" rename. Accepted on load.
+const LegacyStatusPurchased = "purchased"
+
+// normalizeStatus maps legacy status values to current ones.
+// "purchased" → "given"; everything else passes through.
+func normalizeStatus(s string) string {
+	if s == LegacyStatusPurchased {
+		return "given"
+	}
+	return s
+}
+
 // ContactFile is the per-contact JSON structure.
 type ContactFile struct {
 	ContactKey    string `json:"contact_key"`
@@ -73,6 +85,7 @@ type ContactMapping struct {
 	File       string   `json:"file"`
 	Visibility string   `json:"visibility"`
 	Tags       []string `json:"tags,omitempty"`
+	Archived   bool     `json:"archived,omitempty"`
 }
 
 // LoadIndex reads _index.json from the gifts directory.
@@ -109,6 +122,9 @@ func LoadContactFile(path string) (*ContactFile, error) {
 	if err := json.Unmarshal(data, &cf); err != nil {
 		return nil, err
 	}
+	for i := range cf.Ideas {
+		cf.Ideas[i].Status = normalizeStatus(cf.Ideas[i].Status)
+	}
 	return &cf, nil
 }
 
@@ -134,6 +150,9 @@ func LoadGeneralIdeas(giftsDir string) ([]Idea, error) {
 	var ideas []Idea
 	if err := json.Unmarshal(data, &ideas); err != nil {
 		return nil, err
+	}
+	for i := range ideas {
+		ideas[i].Status = normalizeStatus(ideas[i].Status)
 	}
 	return ideas, nil
 }

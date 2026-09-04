@@ -23,3 +23,12 @@ func requireIndex(giftsDir string) *store.IndexFile {
 	}
 	return idx
 }
+
+// rejectArchived exits if the given contact key maps to an archived contact.
+// Call after ResolveContact for commands that create or list active data.
+func rejectArchived(idx *store.IndexFile, key, name string) {
+	if m, ok := idx.Contacts[key]; ok && m.Archived {
+		fmt.Fprintf(os.Stderr, "pressie: %s is archived (use `pressie unarchive-contact --for %s` to restore)\n", name, key)
+		os.Exit(1)
+	}
+}

@@ -15,7 +15,7 @@ import (
 
 // cmdAddGiven logs a gift given to a contact.
 // If the gift item matches an open idea for that contact, the idea's
-// status is flipped to "purchased" so it stops surfacing in ideas queries.
+// status is flipped to "given" so it stops surfacing in ideas queries.
 func cmdAddGiven(args []string) {
 	if wantsHelp(args) {
 		helpAddGiven()
@@ -64,6 +64,7 @@ func cmdAddGiven(args []string) {
 		fmt.Fprintf(os.Stderr, "pressie: %s\n", err)
 		os.Exit(1)
 	}
+	rejectArchived(idx, key, name)
 
 	cf, err := gifts.EnsureContactFile(cfg.GiftsDir, relPath, key, name)
 	if err != nil {
@@ -79,7 +80,7 @@ func cmdAddGiven(args []string) {
 		// Precise retirement by idea ID.
 		for i := range cf.Ideas {
 			if cf.Ideas[i].ID == cfg.Idea && cf.Ideas[i].Status == "open" {
-				cf.Ideas[i].Status = "purchased"
+				cf.Ideas[i].Status = "given"
 				retired++
 			}
 		}
@@ -91,7 +92,7 @@ func cmdAddGiven(args []string) {
 		// Fuzzy retirement by item text match.
 		for i := range cf.Ideas {
 			if cf.Ideas[i].Status == "open" && itemsMatch(cf.Ideas[i].Item, gift.Item) {
-				cf.Ideas[i].Status = "purchased"
+				cf.Ideas[i].Status = "given"
 				retired++
 			}
 		}

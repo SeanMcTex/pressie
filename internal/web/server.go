@@ -19,9 +19,9 @@ import (
 // Server is the pressie web server. It reads/writes the same JSON files
 // as the CLI, using the internal/store and internal/gifts packages directly.
 type Server struct {
-	giftsDir string
+	giftsDir  string
 	authToken string
-	mux      *http.ServeMux
+	mux       *http.ServeMux
 }
 
 // NewServer creates a web server for the given gifts directory.
@@ -61,9 +61,14 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("POST /api/contacts/{name}/ideas", s.handleAddIdea)
 	s.mux.HandleFunc("POST /api/contacts/{name}/gifts/given", s.handleAddGiven)
 	s.mux.HandleFunc("POST /api/contacts/{name}/gifts/received", s.handleAddReceived)
+	s.mux.HandleFunc("POST /api/contacts/{name}/archive", s.handleArchiveContact)
+	s.mux.HandleFunc("POST /api/contacts/{name}/unarchive", s.handleUnarchiveContact)
 	s.mux.HandleFunc("PUT /api/contacts/{name}/preferences", s.handleSetPreferences)
 	s.mux.HandleFunc("GET /api/ideas", s.handleGetGeneralIdeas)
 	s.mux.HandleFunc("POST /api/ideas", s.handleAddGeneralIdea)
+	s.mux.HandleFunc("PUT /api/contacts/{name}/ideas/{id}", s.handleEditContactIdea)
+	s.mux.HandleFunc("PUT /api/contacts/{name}/gifts/{id}", s.handleEditGift)
+	s.mux.HandleFunc("PUT /api/ideas/{id}", s.handleEditGeneralIdea)
 	s.mux.HandleFunc("DELETE /api/ideas/{id}", s.handleDeleteGeneralIdea)
 	s.mux.HandleFunc("DELETE /api/contacts/{name}/ideas/{id}", s.handleDeleteContactIdea)
 
@@ -103,18 +108,18 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-	// Allow POST /login through (the login form submit handler authenticates itself).
-	if r.Method == "POST" && r.URL.Path == "/login" {
-		next.ServeHTTP(w, r)
-		return
-	}
+		// Allow POST /login through (the login form submit handler authenticates itself).
+		if r.Method == "POST" && r.URL.Path == "/login" {
+			next.ServeHTTP(w, r)
+			return
+		}
 
-	// Login page for browser requests, 401 for API
-	if strings.HasPrefix(r.URL.Path, "/api/") {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
-		return
-	}
-	s.serveLogin(w, r)
+		// Login page for browser requests, 401 for API
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		s.serveLogin(w, r)
 	})
 }
 
@@ -154,15 +159,20 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type contactSummary struct {
-		Key       string   `json:"key"`
-		Name      string   `json:"name"`
-		File      string   `json:"file"`
-		Visibility string  `json:"visibility"`
-		Tags      []string `json:"tags,omitempty"`
+		Key        string   `json:"key"`
+		Name       string   `json:"name"`
+		File       string   `json:"file"`
+		Visibility string   `json:"visibility"`
+		Tags       []string `json:"tags,omitempty"`
+		Archived   bool     `json:"archived,omitempty"`
 	}
 
+	includeArchived := r.URL.Query().Get("archived") == "true"
 	contacts := make([]contactSummary, 0, len(idx.Contacts))
 	for key, m := range idx.Contacts {
+		if m.Archived && !includeArchived {
+			continue
+		}
 		name := s.lookupName(m.File)
 		contacts = append(contacts, contactSummary{
 			Key:        key,
@@ -170,8 +180,10 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 			File:       m.File,
 			Visibility: m.Visibility,
 			Tags:       m.Tags,
+			Archived:   m.Archived,
 		})
 	}
+
 	sort.Slice(contacts, func(i, j int) bool { return contacts[i].Name < contacts[j].Name })
 	writeJSON(w, http.StatusOK, contacts)
 }
@@ -184,7 +196,7 @@ func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, displayName, relPath, err := gifts.ResolveContact(context.Background(), s.giftsDir, idx, name, "private")
+	key, displayName, relPath, err := gifts.ResolveContact(context.Background(), s.giftsDir, idx, name, "private")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -195,16 +207,21 @@ func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, fmt.Sprintf("no contact file for %s", displayName))
 		return
 	}
-
-	writeJSON(w, http.StatusOK, cf)
+	m, hasMapping := idx.Contacts[key]
+	archived := hasMapping && m.Archived
+	writeJSON(w, http.StatusOK, struct {
+		*store.ContactFile
+		ContactKey string `json:"contact_key"`
+		Archived   bool   `json:"archived"`
+	}{cf, key, archived})
 }
 
 // addIdeaRequest is the body for adding an idea to a contact.
 type addIdeaRequest struct {
-	Item string   `json:"item"`
-	URL  string   `json:"url,omitempty"`
-	Tags []string `json:"tags,omitempty"`
-	Notes string  `json:"notes,omitempty"`
+	Item  string   `json:"item"`
+	URL   string   `json:"url,omitempty"`
+	Tags  []string `json:"tags,omitempty"`
+	Notes string   `json:"notes,omitempty"`
 	Price *float64 `json:"price,omitempty"`
 }
 
@@ -323,7 +340,7 @@ func (s *Server) handleAddGiven(w http.ResponseWriter, r *http.Request) {
 	// Retire matching ideas
 	for i := range cf.Ideas {
 		if cf.Ideas[i].Status == "open" && itemsMatchWeb(cf.Ideas[i].Item, gift.Item) {
-			cf.Ideas[i].Status = "purchased"
+			cf.Ideas[i].Status = "given"
 		}
 	}
 
@@ -581,6 +598,256 @@ func (s *Server) handleDeleteContactIdea(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+// editIdeaRequest is the body for editing an idea. Pointer fields: nil
+// means "leave unchanged", non-nil (including empty) means "set".
+type editIdeaRequest struct {
+	Item  *string   `json:"item,omitempty"`
+	URL   *string   `json:"url,omitempty"`
+	Tags  *[]string `json:"tags,omitempty"`
+	Notes *string   `json:"notes,omitempty"`
+	Price *float64  `json:"price,omitempty"`
+}
+
+func applyIdeaEdit(idea *store.Idea, req editIdeaRequest) {
+	if req.Item != nil {
+		idea.Item = *req.Item
+	}
+	if req.URL != nil {
+		idea.URL = *req.URL
+	}
+	if req.Tags != nil {
+		idea.Tags = *req.Tags
+	}
+	if req.Notes != nil {
+		idea.Notes = *req.Notes
+	}
+	if req.Price != nil {
+		idea.PriceEstimate = req.Price
+		if *req.Price > 0 && idea.Currency == "" {
+			idea.Currency = "USD"
+		}
+	}
+}
+
+func (s *Server) handleEditContactIdea(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	id := r.PathValue("id")
+
+	idx, err := store.LoadIndex(s.giftsDir)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	key, displayName, relPath, err := gifts.ResolveContact(context.Background(), s.giftsDir, idx, name, "private")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cf, err := store.LoadContactFile(filepath.Join(s.giftsDir, relPath))
+	if err != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("no contact file for %s", displayName))
+		return
+	}
+
+	found := false
+	for i := range cf.Ideas {
+		if cf.Ideas[i].ID == id {
+			var req editIdeaRequest
+			if err := decodeBody(r, &req); err != nil {
+				writeError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			applyIdeaEdit(&cf.Ideas[i], req)
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "idea not found")
+		return
+	}
+
+	cf.Tags = recomputeTagsWeb(cf.Ideas)
+	if err := store.SaveContactFile(filepath.Join(s.giftsDir, relPath), cf); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if m, ok := idx.Contacts[key]; ok {
+		m.Tags = cf.Tags
+		idx.Contacts[key] = m
+		store.SaveIndex(s.giftsDir, idx)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+}
+
+func (s *Server) handleEditGeneralIdea(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	ideas, err := store.LoadGeneralIdeas(s.giftsDir)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	found := false
+	for i := range ideas {
+		if ideas[i].ID == id {
+			var req editIdeaRequest
+			if err := decodeBody(r, &req); err != nil {
+				writeError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			applyIdeaEdit(&ideas[i], req)
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "idea not found")
+		return
+	}
+
+	if err := store.SaveGeneralIdeas(s.giftsDir, ideas); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+}
+
+// editGiftRequest is the body for editing a logged gift.
+type editGiftRequest struct {
+	Item     *string  `json:"item,omitempty"`
+	Occasion *string  `json:"occasion,omitempty"`
+	Date     *string  `json:"date,omitempty"`
+	Price    *float64 `json:"price,omitempty"`
+	Notes    *string  `json:"notes,omitempty"`
+}
+
+func applyGiftEditWeb(gift *store.Gift, req editGiftRequest) {
+	if req.Item != nil {
+		gift.Item = *req.Item
+	}
+	if req.Occasion != nil {
+		gift.Occasion = *req.Occasion
+	}
+	if req.Date != nil {
+		gift.Date = *req.Date
+	}
+	if req.Price != nil {
+		gift.Price = req.Price
+		if *req.Price > 0 && gift.Currency == "" {
+			gift.Currency = "USD"
+		}
+	}
+	if req.Notes != nil {
+		gift.Notes = *req.Notes
+	}
+}
+
+func (s *Server) handleEditGift(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	id := r.PathValue("id")
+
+	idx, err := store.LoadIndex(s.giftsDir)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	_, displayName, relPath, err := gifts.ResolveContact(context.Background(), s.giftsDir, idx, name, "private")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cf, err := store.LoadContactFile(filepath.Join(s.giftsDir, relPath))
+	if err != nil {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("no contact file for %s", displayName))
+		return
+	}
+
+	var req editGiftRequest
+	if err := decodeBody(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	found := false
+	for i := range cf.GiftsGiven {
+		if cf.GiftsGiven[i].ID == id {
+			applyGiftEditWeb(&cf.GiftsGiven[i], req)
+			found = true
+			break
+		}
+	}
+	if !found {
+		for i := range cf.GiftsReceived {
+			if cf.GiftsReceived[i].ID == id {
+				applyGiftEditWeb(&cf.GiftsReceived[i], req)
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "gift not found")
+		return
+	}
+
+	if err := store.SaveContactFile(filepath.Join(s.giftsDir, relPath), cf); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+}
+
+// handleArchiveContact marks a contact archived in the index.
+func (s *Server) handleArchiveContact(w http.ResponseWriter, r *http.Request) {
+	s.setContactArchived(w, r, true)
+}
+
+// handleUnarchiveContact clears a contact's archived flag.
+func (s *Server) handleUnarchiveContact(w http.ResponseWriter, r *http.Request) {
+	s.setContactArchived(w, r, false)
+}
+
+func (s *Server) setContactArchived(w http.ResponseWriter, r *http.Request, archived bool) {
+	name := r.PathValue("name")
+
+	idx, err := store.LoadIndex(s.giftsDir)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	key, displayName, _, err := gifts.ResolveContact(context.Background(), s.giftsDir, idx, name, "private")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	m, ok := idx.Contacts[key]
+	if !ok {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("no index entry for %s", displayName))
+		return
+	}
+
+	if m.Archived != archived {
+		m.Archived = archived
+		idx.Contacts[key] = m
+		if err := store.SaveIndex(s.giftsDir, idx); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "archived": archived, "name": displayName})
 }
 
 // --- Helpers ---

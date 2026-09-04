@@ -110,11 +110,14 @@ func helpIdeas() {
 		"Show gift ideas for a contact, including tag-matched general ideas",
 		" --for <name> [flags]",
 		`  --for <name>             Contact name, key, or "anyone" for all general ideas
-  --status <status>        Filter: open (default), purchased, archived
+  --status <status>        Filter: open (default), given, archived
+  --tag <tag>              Show only ideas with this tag (case-insensitive)
                            Default filters out gifts already given (duplicate avoidance)
   --private                Look in private directory (default)
   --shared                 Look in shared directory`,
-		`pressie ideas --for "Kris"`,
+		`pressie ideas --for "Kris"
+pressie ideas --for "Kris" --tag food
+pressie ideas --for anyone --tag games`,
 	)
 }
 
@@ -182,12 +185,15 @@ func helpPlugins() {
 func helpPrefs() {
 	printHelp("prefs",
 		"Read or set freeform preferences for a contact",
-		" --for <name> [--set <text>] [flags]",
+		" --for <name> [--set <text> | --append <text>] [flags]",
 		`  --for <name>             Contact name or key (required)
-  --set <text>             Set preferences (replaces existing). Without this, reads current preferences.
+  --set <text>             Set preferences (replaces existing)
+  --append <text>          Append a line to existing preferences (creates if none)
+  Without --set or --append, reads current preferences.
   --private                Look in private directory (default)
   --shared                 Look in shared directory`,
-		`pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."`,
+		`pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."
+pressie prefs --for "Kris" --append "Allergic to peanuts."`,
 	)
 }
 
