@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -52,11 +53,31 @@ func cmdAddIdea(args []string) {
 		idea.Currency = "USD"
 	}
 
+	// Auto-promote: when --url is empty, move the first http(s) URL found in
+	// the item or notes into the URL field and strip it from the text, so a
+	// link lands in the structured field even when it's typed inline.
+	if idea.URL == "" {
+		if u := firstURL(idea.Item + " " + idea.Notes); u != "" {
+			idea.URL = u
+			idea.Item = strings.TrimSpace(strings.Replace(idea.Item, u, "", 1))
+			idea.Notes = strings.TrimSpace(strings.Replace(idea.Notes, u, "", 1))
+		}
+	}
+
 	if cfg.For == "anyone" {
 		addGeneralIdea(cfg, &idea)
 	} else {
 		addContactIdea(cfg, &idea)
 	}
+}
+
+// urlPattern matches http(s) URLs. Bare domains without a scheme are not guessed.
+var urlPattern = regexp.MustCompile(`https?://[^\s]+`)
+
+// firstURL returns the first http(s) URL in s with trailing punctuation trimmed, or "".
+func firstURL(s string) string {
+	m := urlPattern.FindString(s)
+	return strings.TrimRight(m, ".,;")
 }
 
 // addGeneralIdea appends an idea to _ideas-general.json.
