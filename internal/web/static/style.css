@@ -75,21 +75,6 @@ body {
   background: var(--accent-light);
 }
 
-/* Back link */
-.back-link {
-  text-decoration: none;
-  color: var(--accent);
-  font-weight: 500;
-  font-size: 0.85rem;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: all 0.15s;
-}
-
-.back-link:hover {
-  background: var(--accent-light);
-}
-
 /* Search bar */
 .search-bar {
   margin-bottom: 16px;

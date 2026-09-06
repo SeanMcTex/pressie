@@ -78,9 +78,6 @@ function navigate(path) {
 // --- Header (shared) ---
 function header(title) {
   const h = el('div', { class: 'header' });
-  if (currentRoute !== '/' && currentRoute !== '') {
-    h.appendChild(el('a', { href: '#/', class: 'back-link' }, '← Back'));
-  }
   h.appendChild(el('h1', {}, title));
   const nav = el('div', { class: 'nav' });
   nav.appendChild(el('a', { href: '#/', class: currentRoute === '/' ? 'active' : '' }, 'Contacts'));
