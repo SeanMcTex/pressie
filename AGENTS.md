@@ -59,10 +59,10 @@ Optional: `--occasion`, `--date`, `--price`, `--notes`, `--private`/`--shared`.
 ```bash
 pressie ideas --for "Kris"
 pressie ideas --for anyone
-pressie ideas --for "Kris" --status purchased
+pressie ideas --for "Kris" --tag food
 ```
 Required: `--for` (name or `"anyone"`).
-Optional: `--status` (open/purchased/archived, default: open), `--private`/`--shared`.
+Optional: `--status` (open/given/archived, default: open; legacy `purchased` accepted), `--tag <tag>` (case-insensitive filter), `--private`/`--shared`.
 
 Output includes idea IDs (`id:` line) which can be passed to `add-given --idea <id>`.
 
@@ -92,9 +92,38 @@ pressie prefs --for "Kris" --set "Favorite colors: blue, green. Shoe size: 11."
 pressie prefs --for "Kris"
 ```
 Required: `--for <name>`.
-Optional: `--set <text>` (replaces existing preferences). Without `--set`, reads current preferences.
+Optional: `--set <text>` (replaces existing) or `--append <text>` (adds a line; creates prefs if none). Without either, reads current preferences.
 
 Preferences are freeform text shown as context in `ideas` and `list` output — useful for storing things like favorite colors, sizes, or dietary restrictions that aren't gift ideas but inform gift selection. Note: the JSON field is `"preferences"` (not `"prefs"`) — the command name is abbreviated but the data field uses the full word.
+
+### archive-contact / unarchive-contact
+```bash
+pressie archive-contact --for "Kris"
+pressie unarchive-contact --for "Kris"
+```
+Required: `--for`.
+Archiving hides a contact from the web list and blocks new entries (add-idea/add-given/add-received refuse with a pointer to unarchive). Data files are untouched; `list`, `ideas`, `prefs`, and `delete-idea` still work on archived contacts.
+
+### edit-idea
+```bash
+pressie edit-idea --id <idea-id> --item "Letterpress print, A4" --price 85
+pressie edit-idea --id <idea-id> --for "Kris" --notes "blue ink"
+```
+Required: `--id`.
+Optional: `--item`, `--tags`, `--url`, `--price` (-1 clears), `--date`, `--notes`; `--for <name>` targets a per-contact idea (omit or `"anyone"` for general ideas). Only passed flags change. Per-contact edits recompute the contact's tag profile.
+
+### edit-gift
+```bash
+pressie edit-gift --id <gift-id> --for "Kris" --occasion birthday --price 25
+```
+Required: `--id`, `--for` (or `--to`/`--from`).
+Optional: `--item`, `--occasion`, `--date`, `--price` (-1 clears), `--notes`. Searches both given and received lists.
+
+Web equivalents: archive/unarchive buttons on the contact page (archive has a confirmation dialog), Edit buttons on every idea and gift card, and a preferences edit form — all backed by `PUT`/`POST` endpoints with the same semantics as the CLI.
+
+### Web interface feature parity
+
+The web interface and the CLI must remain functionally identical over the same data: every CLI command has a web counterpart (or is deliberately web-only UI, like the login page), and both read/write the same JSON files with the same semantics. When adding a feature, implement both sides (or file an issue for the lagging side) in the same change.
 
 ## Commands (not yet implemented)
 
