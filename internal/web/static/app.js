@@ -434,7 +434,12 @@ function renderIdeaCard(idea, contactName) {
   meta.appendChild(statusBadge(idea.status));
   if (idea.added) meta.appendChild(el('span', {}, `added: ${idea.added}`));
   if (idea.price_estimate) meta.appendChild(el('span', {}, `est: ${idea.currency || 'USD'} ${idea.price_estimate}`));
-  if (idea.url) meta.appendChild(el('a', { href: idea.url, target: '_blank' }, 'link'));
+  if (idea.url) {
+    // Same-tab navigation by default: some mobile browsers (Arc Search on
+    // iOS) fail to open target=_blank links. Long-press/OS context still
+    // allows "open in new tab" for those who want it.
+    meta.appendChild(el('a', { href: idea.url, rel: 'noopener' }, '↗ link'));
+  }
   card.appendChild(meta);
 
   if (idea.tags && idea.tags.length > 0) {

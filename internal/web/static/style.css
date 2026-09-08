@@ -125,7 +125,7 @@ body {
   margin-bottom: 4px;
 }
 
-.contact-item .tags {
+.tags {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
@@ -266,12 +266,22 @@ button.danger:hover {
 }
 
 .idea-item .meta a {
-  color: var(--accent);
   text-decoration: none;
+  /* Match tag-pill metrics (3px 10px, 0.72rem) with a green scheme. */
+  padding: 3px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  background: var(--success-light);
+  color: var(--success-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .idea-item .meta a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  background: var(--success);
+  color: var(--card);
 }
 
 .idea-item .id-line {
