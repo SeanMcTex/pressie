@@ -159,12 +159,13 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type contactSummary struct {
-		Key        string   `json:"key"`
-		Name       string   `json:"name"`
-		File       string   `json:"file"`
-		Visibility string   `json:"visibility"`
-		Tags       []string `json:"tags,omitempty"`
-		Archived   bool     `json:"archived,omitempty"`
+		Key        string              `json:"key"`
+		Name       string              `json:"name"`
+		File       string              `json:"file"`
+		Visibility string              `json:"visibility"`
+		Tags       []string            `json:"tags,omitempty"`
+		TagCounts  map[string]int      `json:"tag_counts,omitempty"`
+		Archived   bool                `json:"archived,omitempty"`
 	}
 
 	includeArchived := r.URL.Query().Get("archived") == "true"
@@ -173,13 +174,50 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 		if m.Archived && !includeArchived {
 			continue
 		}
-		name := s.lookupName(m.File)
+		cf, err := store.LoadContactFile(filepath.Join(s.giftsDir, m.File))
+		name := ""
+		var tags []string
+		if err == nil {
+			// Contact file is the source of truth for name and tags;
+			// fall back to index tags when the file lacks them.
+			name = cf.Name
+			if len(cf.Tags) > 0 {
+				// Dedupe case-insensitively, preserving first-seen casing:
+				// legacy files can contain duplicates from older merge paths.
+				seen := make(map[string]bool, len(cf.Tags))
+				for _, t := range cf.Tags {
+					k := strings.ToLower(t)
+					if !seen[k] {
+						seen[k] = true
+						tags = append(tags, t)
+					}
+				}
+			}
+		}
+
+		// Count tag frequency from the contact's ideas so the UI can
+		// rank tags most→least used.
+		var counts map[string]int
+		if err == nil {
+			for _, idea := range cf.Ideas {
+				if idea.Status != "open" {
+					continue
+				}
+				for _, t := range idea.Tags {
+					if counts == nil {
+						counts = make(map[string]int)
+					}
+					counts[strings.ToLower(t)]++
+				}
+			}
+		}
 		contacts = append(contacts, contactSummary{
 			Key:        key,
 			Name:       name,
 			File:       m.File,
 			Visibility: m.Visibility,
-			Tags:       m.Tags,
+			Tags:       tags,
+			TagCounts:  counts,
 			Archived:   m.Archived,
 		})
 	}
@@ -851,16 +889,6 @@ func (s *Server) setContactArchived(w http.ResponseWriter, r *http.Request, arch
 }
 
 // --- Helpers ---
-
-// lookupName loads a contact file's Name field by relative path.
-func (s *Server) lookupName(relPath string) string {
-	cf, err := store.LoadContactFile(filepath.Join(s.giftsDir, relPath))
-	if err != nil {
-		return ""
-	}
-	return cf.Name
-}
-
 // mergeTagsWeb is the same merge logic as the CLI's mergeTags.
 func mergeTagsWeb(existing, additions []string) []string {
 	seen := make(map[string]bool, len(existing)+len(additions))

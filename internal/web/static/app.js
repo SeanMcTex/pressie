@@ -164,10 +164,35 @@ function renderContactList(contacts) {
     return;
   }
   for (const c of contacts) {
+    // Tags ranked most→least frequent for this contact (server-computed
+    const MAX_TAGS = 5;
+    // tag_counts order). Show top 5; "+N" expands inline.
+    const counts = c.tag_counts || {};
+    const ranked = [...(c.tags || [])].sort((a, b) => (counts[a] || 0) - (counts[b] || 0) || a.localeCompare(b)).reverse();
+    const visible = ranked.slice(0, MAX_TAGS);
+    const overflow = ranked.slice(MAX_TAGS);
+
+    const tagsDiv = el('div', { class: 'tags' });
+    if (visible.length > 0) {
+      visible.forEach(t => tagsDiv.appendChild(tagPill(t)));
+    }
+    if (overflow.length > 0) {
+      const moreLink = el('a', {
+        href: '#',
+        class: 'tag tag-more',
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          tagsDiv.replaceChildren(...ranked.map(tagPill));
+        },
+      }, `+${overflow.length} more`);
+      tagsDiv.appendChild(moreLink);
+    }
+
     const item = el('div', { class: 'contact-item', onclick: () => navigate(`contacts/${c.name}`) },
       el('div', {},
         el('div', { class: 'name' }, c.name),
-        c.tags && c.tags.length > 0 ? el('div', { class: 'tags' }, ...c.tags.map(tagPill)) : null,
+        tagsDiv.childElementCount > 0 ? tagsDiv : null,
       ),
       el('span', { class: 'text-muted' }, c.visibility),
     );
