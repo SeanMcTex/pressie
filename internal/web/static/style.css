@@ -200,6 +200,11 @@ button.danger:hover {
   font-weight: 700;
 }
 
+.copy-id {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0;
+}
+
 .tag-more {
   background: transparent;
   border: 1px dashed var(--accent);

@@ -426,6 +426,27 @@ function showTab(container, tab, contact, clickedTab) {
   }
 }
 
+// Copy-ID button: replaces the old always-visible UUID line. Clicking
+// copies the full UUID to the clipboard and flashes a confirmation.
+function copyIdButton(id) {
+  return el('button', {
+    class: 'secondary btn-sm copy-id',
+    title: 'Copy ID: ' + id,
+    onclick: async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(id);
+        const btn = e.target.closest('button');
+        const prev = btn.textContent;
+        btn.textContent = '✓ copied';
+        setTimeout(() => { btn.textContent = prev; }, 1500);
+      } catch (err) {
+        prompt('Copy ID:', id);
+      }
+    },
+  }, '⧉ ID');
+}
+
 function renderIdeaCard(idea, contactName) {
   const card = el('div', { class: 'idea-item' });
   card.appendChild(el('div', { class: 'item-name' }, idea.item));
@@ -450,10 +471,10 @@ function renderIdeaCard(idea, contactName) {
     card.appendChild(el('div', { class: 'text-muted', style: 'margin-top: 4px;' }, idea.notes));
   }
 
-  card.appendChild(el('div', { class: 'id-line', style: 'margin-top: 4px;' }, idea.id));
-
   // Actions
   const actions = el('div', { class: 'actions' });
+
+  actions.appendChild(copyIdButton(idea.id));
 
   // "Given" button — only for open ideas on contact pages
   if (idea.status === 'open' && contactName) {
@@ -486,15 +507,16 @@ function renderGiftCard(gift) {
   if (gift.price) meta.appendChild(el('span', {}, `price: ${gift.currency || 'USD'} ${gift.price}`));
   card.appendChild(meta);
 
-  card.appendChild(el('div', { class: 'actions' },
+  const actions = el('div', { class: 'actions' },
+    copyIdButton(gift.id),
     el('button', { class: 'secondary btn-sm', onclick: () => editGift(gift, currentContactName) }, 'Edit'),
-  ));
+  );
+  card.appendChild(actions);
 
   if (gift.notes) {
     card.appendChild(el('div', { class: 'text-muted', style: 'margin-top: 4px;' }, gift.notes));
   }
 
-  card.appendChild(el('div', { class: 'id-line', style: 'margin-top: 4px;' }, gift.id));
   return card;
 }
 
