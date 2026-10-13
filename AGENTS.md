@@ -6,6 +6,14 @@ This file guides AI agents using Pressie as a gift-tracking tool.
 
 Pressie is a CLI for tracking gift ideas, gifts given, and gifts received. Data is stored as plain JSON files in a directory you control. No database, no server, no lock-in.
 
+## Issue tracking
+
+Issues, bugs, and feature requests live in **GitHub Issues** — <https://github.com/SeanMcTex/pressie/issues> — never in local files.
+
+- Before proposing work, check existing tickets: `gh issue list -R SeanMcTex/pressie`
+- File new ones: `gh issue create -R SeanMcTex/pressie --title "..." --body "..."`
+- Do **not** create local `ISSUE-*.md` files — they fork the tracker and go stale. (One lived in the repo root through 2026-10-13; it is deleted in favor of issue #5, which carries the same content plus dated status.)
+
 ## Setup
 
 ```bash
